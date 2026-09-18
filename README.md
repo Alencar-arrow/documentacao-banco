@@ -108,28 +108,118 @@ Este documento mapeia as entidades, atributos e chaves do sistema de gestão de 
 | nome | VARCHAR | Nome do produto |
 | descricao | TEXT | Detalhes/especificações do produto |
 | codigo_barras | VARCHAR (Unique) | Código de barras comercial (EAN) |
+| unidade_medida | VARCHAR | Unidade de venda/controle (Un, Kg, L, Cx) |
 
-### Tabela: CONDOMINIO_PRODUTO
-*Tabela associativa para gerenciar múltiplos mercados e produtos por condomínio.*
+### Tabela: MERCADO
 
 | Atributo | Tipo / Restrição | Descrição |
 | :--- | :--- | :--- |
-| **id_condominio** | PK, FK ➔ CONDOMINIO(id_condominio) | Identificador do condomínio |
+| **id_mercado** | PK | Identificador único do ponto de venda |
+| id_condominio | FK ➔ CONDOMINIO(id_condominio) | Condomínio ao qual o mercado pertence |
+| nome | VARCHAR | Nome/identificação do mercado (ex: "Mercado Bloco A") |
+| localizacao | VARCHAR | Localização dentro do condomínio |
+| status_ativo | BOOLEAN | Indica se o ponto de venda está em operação |
+
+### Tabela: MERCADO_PRODUTO
+
+| Atributo | Tipo / Restrição | Descrição |
+| :--- | :--- | :--- |
+| **id_mercado** | PK, FK ➔ MERCADO(id_mercado) | Identificador do mercado |
 | **id_produto** | PK, FK ➔ PRODUTO(id_produto) | Identificador do produto |
-| numero_mercado | INT / VARCHAR | Identificador do ponto de venda/mercado específico |
 | status_ativo | BOOLEAN | Indica se o produto está ativo neste ponto de venda |
 
-### Tabela: ESTOQUE_DO_CONDOMINIO
+### Tabela: ESTOQUE_DO_MERCADO
 
 | Atributo | Tipo / Restrição | Descrição |
 | :--- | :--- | :--- |
 | **id_estoque** | PK | Identificador do registro de estoque |
-| id_condominio | FK ➔ CONDOMINIO(id_condominio) | Condomínio correspondente |
+| id_mercado | FK ➔ MERCADO(id_mercado) | Mercado correspondente |
 | id_produto | FK ➔ PRODUTO(id_produto) | Produto em estoque |
 | qtd_disponivel | INT | Quantidade atual física |
 | qtd_minima | INT | Alerta de estoque mínimo para reposição |
 | preco_local | DECIMAL | Preço de venda praticado neste local |
 | data_primeira_entrada | DATE | Data do primeiro lote registrado |
+| *(constraint)* | UNIQUE (id_mercado, id_produto) | Garante um único registro de estoque por produto/mercado |
+
+---
+
+## 📌 Tabelas de Fornecimento e Compras
+
+### Tabela: FORNECEDOR
+
+| Atributo | Tipo / Restrição | Descrição |
+| :--- | :--- | :--- |
+| **id_fornecedor** | PK | Identificador do fornecedor |
+| razao_social | VARCHAR | Razão social |
+| nome_fantasia | VARCHAR | Nome fantasia |
+| cnpj | VARCHAR (Unique) | CNPJ |
+| telefone | VARCHAR | Telefone de contato |
+| email | VARCHAR | E-mail de contato |
+| endereco | VARCHAR | Endereço |
+| status | VARCHAR / ENUM | Domínio: Ativo, Inativo, Bloqueado |
+
+### Tabela: FORNECEDOR_PRODUTO
+
+| Atributo | Tipo / Restrição | Descrição |
+| :--- | :--- | :--- |
+| **id_fornecedor_produto** | PK | Identificador do vínculo |
+| id_fornecedor | FK ➔ FORNECEDOR(id_fornecedor) | Fornecedor |
+| id_produto | FK ➔ PRODUTO(id_produto) | Produto fornecido |
+| preco_custo | DECIMAL | Preço de tabela do fornecedor |
+| prazo_entrega | INT | Prazo em dias |
+| codigo_produto_fornecedor | VARCHAR | Código interno do fornecedor para o produto |
+| ativo | BOOLEAN | Indica se o vínculo está ativo |
+
+### Tabela: PEDIDO_COMPRA
+
+| Atributo | Tipo / Restrição | Descrição |
+| :--- | :--- | :--- |
+| **id_pedido** | PK | Identificador do pedido |
+| id_mercado | FK ➔ MERCADO(id_mercado) | Mercado para o qual a compra é destinada |
+| id_fornecedor | FK ➔ FORNECEDOR(id_fornecedor) | Fornecedor do pedido |
+| data_pedido | DATE | Data de emissão |
+| data_previsao_entrega | DATE | Previsão de entrega |
+| status | VARCHAR / ENUM | Domínio: Pendente, Aprovado, Em Trânsito, Recebido, Cancelado |
+| valor_total | DECIMAL | Valor total do pedido |
+
+### Tabela: ITEM_PEDIDO_COMPRA
+
+| Atributo | Tipo / Restrição | Descrição |
+| :--- | :--- | :--- |
+| **id_item** | PK | Identificador do item |
+| id_pedido | FK ➔ PEDIDO_COMPRA(id_pedido) | Pedido relacionado |
+| id_produto | FK ➔ PRODUTO(id_produto) | Produto pedido |
+| quantidade_solicitada | INT | Quantidade solicitada |
+| preco_unitario | DECIMAL | Preço unitário negociado no pedido |
+| subtotal | DECIMAL | quantidade_solicitada × preco_unitario |
+
+### Tabela: ENTRADA_ESTOQUE
+
+| Atributo | Tipo / Restrição | Descrição |
+| :--- | :--- | :--- |
+| **id_entrada** | PK | Identificador da entrada |
+| id_mercado | FK ➔ MERCADO(id_mercado) | Mercado que recebeu a mercadoria |
+| id_fornecedor | FK ➔ FORNECEDOR(id_fornecedor) | Fornecedor da entrega |
+| id_pedido | FK ➔ PEDIDO_COMPRA(id_pedido) | Pedido de origem |
+| data_entrada | DATE | Data do recebimento |
+| nota_fiscal | VARCHAR | Número da nota fiscal |
+| valor_total | DECIMAL | Valor total da nota |
+| responsavel | VARCHAR | Responsável pelo recebimento |
+
+### Tabela: LOTE
+
+| Atributo | Tipo / Restrição | Descrição |
+| :--- | :--- | :--- |
+| **id_lote** | PK | Identificador do lote |
+| id_entrada | FK ➔ ENTRADA_ESTOQUE(id_entrada) | Nota fiscal/recebimento de origem |
+| id_produto | FK ➔ PRODUTO(id_produto) | Produto do lote |
+| id_fornecedor | FK ➔ FORNECEDOR(id_fornecedor) | Fornecedor do lote |
+| codigo_lote | VARCHAR | Código do lote (fabricante) |
+| data_fabricacao | DATE | Data de fabricação |
+| data_validade | DATE | Data de validade |
+| data_recebimento | DATE | Data de recebimento físico |
+| quantidade_recebida | INT | Quantidade recebida neste lote |
+| custo_unitario | DECIMAL | Custo real pago por unidade neste lote |
 
 ---
 
