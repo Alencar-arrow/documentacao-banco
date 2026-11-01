@@ -47,11 +47,8 @@ As tabelas estão organizadas em quatro áreas:
 
 | Arquivo | Conteúdo |
 |---|---|
-| `Grupo_03.pdf` | Documento completo: negócio, requisitos, regras, fluxogramas, modelos conceitual e lógico, verificação |
-| `DER_SafraLink.png` / `DER_SafraLink.drawio` | Diagrama Entidade-Relacionamento completo (atributos e cardinalidades) |
-| `DER_SafraLink_mapa.png` / `DER_SafraLink_mapa.drawio` | Mapa simplificado do banco (notação pé de galinha) |
-| `safralink_mysql.sql` | Criação do banco e das 32 tabelas, com os 4 moradores de exemplo |
-| `safralink_testes.sql` | Dados de teste, consultas e verificação automática das regras de negócio |
+| `safralink.sql` | Criação do banco e das 32 tabelas, com os 4 moradores de exemplo |
+
 
 ## Como criar o banco
 
